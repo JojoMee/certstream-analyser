@@ -1,0 +1,84 @@
+services:
+  traefik:
+    image: traefik:v2.11
+    restart: always
+    volumes:
+      - /opt/traefik/config:/etc/traefik:z
+      - /opt/traefik/acme.json:/acme.json:z
+      - /var/run/docker.sock:/var/run/docker.sock:z,ro
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - proxy
+    command:
+      # entrypoints redirect to https on http and default certResolver is letsencrypt prod
+      - "--entryPoints.http.address=:80"
+      - "--entryPoints.http.transport.respondingTimeouts.readTimeout=42"
+      - "--entryPoints.http.transport.respondingTimeouts.writeTimeout=42"
+      - "--entryPoints.http.transport.respondingTimeouts.idleTimeout=10"
+      - "--entryPoints.http.http.redirections.entryPoint.to=https"
+      - "--entryPoints.http.http.redirections.entryPoint.scheme=https"
+      - "--entryPoints.http.http.redirections.entryPoint.permanent=true"
+      - "--entryPoints.https.address=:443"
+      - "--entryPoints.https.transport.respondingTimeouts.readTimeout=42"
+      - "--entryPoints.https.transport.respondingTimeouts.writeTimeout=0"
+      - "--entryPoints.https.transport.respondingTimeouts.idleTimeout=180"
+      # global static config
+      - "--global.checkNewVersion=false"
+      - "--global.sendAnonymousUsage=false"
+      - "--pilot.dashboard=false"
+      # traefik log to stdout
+      - "--log.level=ERROR"
+      - "--log.format=json"
+      # traefik api
+      - "--api.dashboard=true"
+      # docker provider
+      - "--providers.docker.exposedByDefault=false"
+      - "--providers.docker.network=proxy"
+      # dynamic yaml file provider
+      # - "--providers.file.filename=/etc/traefik/traefik-dynamic.yml"
+      # - "--providers.file.watch=true"
+      # ACME Let's Encrypt cloudflare
+      - "--certificatesResolvers.le.acme.email=${LE_EMAIL}"
+      - "--certificatesResolvers.le.acme.storage=/acme.json"
+      - "--certificatesResolvers.le.acme.keyType=EC384"
+      - "--certificatesResolvers.le.acme.dnsChallenge.provider=cloudflare"
+      - "--certificatesResolvers.le.acme.dnsChallenge.resolvers=9.9.9.9:53,1.1.1.1:53,8.8.8.8:53"
+      # elastic
+      - "--serverstransport.insecureskipverify"
+    labels:
+      - traefik.enable=true
+      # all wildcards domain certificates for router `traefik`
+      - traefik.http.routers.traefik.tls.domains[0].main=ctlogs.party
+      - traefik.http.routers.traefik.tls.domains[0].sans=*.ctlogs.party
+      # default middleware chains for external and internal
+      - traefik.http.middlewares.internal-secure.chain.middlewares=secure-headers,rate-limit,gzip-compress
+      - traefik.http.middlewares.external-secure.chain.middlewares=secure-headers,gzip-compress
+      # internal middlewares basic auth, ipwhitelist and ratelimiting
+      - traefik.http.middlewares.rate-limit.ratelimit.average=100
+      - traefik.http.middlewares.rate-limit.ratelimit.burst=50
+      # secure headers basic params, remove x-powered-by
+      - traefik.http.middlewares.secure-headers.headers.customFrameOptionsValue=SAMEORIGIN
+      - traefik.http.middlewares.secure-headers.headers.browserXssFilter=true
+      - traefik.http.middlewares.secure-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.secure-headers.headers.referrerPolicy=no-referrer
+      - traefik.http.middlewares.secure-headers.headers.customResponseHeaders.X-Powered-By=
+      # default add gzip compression
+      - traefik.http.middlewares.gzip-compress.compress=true
+      # block hostname with internal-secure chain and noop service
+      - traefik.http.routers.traefik.rule=Host(`traefik.ctlogs.party`)&&Method(`GET`,`HEAD`)
+      - traefik.http.routers.traefik.entrypoints=https
+      - traefik.http.routers.traefik.tls.certresolver=le
+      - traefik.http.routers.traefik.service=api@internal
+      - traefik.http.routers.traefik.middlewares=internal-secure
+
+
+    environment:
+      - CF_API_EMAIL=${CF_API_EMAIL}
+      - CF_API_KEY=${CF_API_KEY}
+
+networks:
+  proxy:
+    external: true
+

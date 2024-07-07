@@ -1,0 +1,76 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: always
+    hostname: ${DOMAIN} 
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    networks:
+      - default
+      - metrics
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.rabbitmq.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.rabbitmq.entrypoints=https
+      - traefik.http.routers.rabbitmq.tls.certresolver=le
+      - traefik.http.routers.rabbitmq.middlewares=internal-secure
+      - traefik.http.routers.rabbitmq.service=mq-srv
+      - traefik.http.services.mq-srv.loadbalancer.server.port=15672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 120
+  
+  stream-to-queue-publisher:
+    build: ./stream-to-queue-publisher
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - default
+      - certstream
+    environment:
+      - BATCH_SIZE=${BATCH_SIZE}
+      - CERTSTREAM_URL=ws://certstream-server:8080/full-stream
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_QUEUE_NAME=${RABBITMQ_QUEUE_NAME}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+  
+  cert-indexer:
+    build: ./cert-indexer
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - default
+      - elastic
+    environment:
+      - CTLOG_INDEX_NAME=${CTLOG_INDEX_NAME}
+      - ELASTIC_API_KEY=${ELASTIC_API_KEY}
+      - ELASTIC_CA_FILE=${ELASTIC_CA_FILE}
+      - ELASTIC_URL=${ELASTIC_URL}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_QUEUE_NAME=${RABBITMQ_QUEUE_NAME}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+
+networks:
+  certstream:
+    external: true
+  elastic:
+    external: true
+  metrics:
+    external: true
+  proxy:
+    external: true
+
+volumes:
+  rabbitmq:

@@ -1,0 +1,22 @@
+services:
+  certstream-server:
+    image: ghcr.io/d-rickyy-b/certstream-server-go:v1.6.0
+    restart: unless-stopped
+    networks:
+      - certstream
+      - metrics
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.certstream.rule=Host(`stream.ctlogs.party`)
+      - traefik.http.routers.certstream.entrypoints=https
+      - traefik.http.routers.certstream.tls.certresolver=le
+      - traefik.http.routers.certstream.middlewares=internal-secure
+
+networks:
+  certstream:
+    external: true
+  metrics:
+    external: true
+  proxy:
+    external: true

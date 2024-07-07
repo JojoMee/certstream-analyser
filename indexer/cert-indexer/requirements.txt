@@ -1,0 +1,4 @@
+python-dotenv~=1.0
+elasticsearch~=8.13
+publicsuffixlist~=0.10
+pika~=1.3

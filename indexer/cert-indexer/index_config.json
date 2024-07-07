@@ -1,0 +1,199 @@
+{
+    "settings": {
+        "index": {
+            "number_of_replicas": "0",
+            "number_of_shards": 5,
+            "mapping": {
+                "coerce": false
+            }
+        }
+    },
+    "mappings": {
+        "dynamic": "strict",
+        "properties": {
+            "update_type": {
+                "type": "keyword"
+            },
+            "cert_index": {
+                "type": "long"
+            },
+            "cert_link": {
+                "type": "text"
+            },
+            "seen": {
+                "type": "date",
+                "format": "epoch_millis"
+            },
+            "ctlog_source_name": {
+                "type": "keyword"
+            },
+            "serial_number": {
+                "type": "text"
+            },
+            "fingerprint": {
+                "type": "text"
+            },
+            "signature_algorithm": {
+                "type": "keyword"
+            },
+            "not_after": {
+                "type": "date",
+                "format": "epoch_second"
+            },
+            "not_before": {
+                "type": "date",
+                "format": "epoch_second"
+            },
+            "lifetime": {
+                "type": "integer"
+            },
+            "encoded_size": {
+                "type": "integer"
+            },
+            "root_ca_name": {
+                "type": "keyword"
+            },
+            "subject": {
+                "properties": {
+                    "C": {
+                        "type": "text"
+                    },
+                    "CN": {
+                        "type": "text"
+                    },
+                    "L": {
+                        "type": "text"
+                    },
+                    "O": {
+                        "type": "text"
+                    },
+                    "OU": {
+                        "type": "text"
+                    },
+                    "ST": {
+                        "type": "text"
+                    },
+                    "aggregated": {
+                        "type": "text"
+                    },
+                    "email_address": {
+                        "type": "text"
+                    }
+                }
+            },
+            "all_domains": {
+                "type": "text"
+            },
+            "all_public_suffixes": {
+                "type": "text"
+            },
+            "extensions": {
+                "properties": {
+                    "certificatePolicies": {
+                        "type": "keyword"
+                    },
+                    "extendedKeyUsage": {
+                        "type": "keyword"
+                    },
+                    "keyUsage": {
+                        "type": "keyword"
+                    }
+                }
+            },
+            "chain_length": {
+                "type": "integer"
+            },
+            "chain": {
+                "type": "nested",
+                "properties": {
+                    "serial_number": {
+                        "type": "text"
+                    },
+                    "fingerprint": {
+                        "type": "text"
+                    },
+                    "signature_algorithm": {
+                        "type": "keyword"
+                    },
+                    "not_after": {
+                        "type": "date",
+                        "format": "epoch_second"
+                    },
+                    "not_before": {
+                        "type": "date",
+                        "format": "epoch_second"
+                    },
+                    "extensions": {
+                        "properties": {
+                            "certificatePolicies": {
+                                "type": "keyword"
+                            },
+                            "extendedKeyUsage": {
+                                "type": "keyword"
+                            },
+                            "keyUsage": {
+                                "type": "keyword"
+                            }
+                        }
+                    },
+                    "issuer": {
+                        "properties": {
+                            "C": {
+                                "type": "text"
+                            },
+                            "CN": {
+                                "type": "text"
+                            },
+                            "L": {
+                                "type": "text"
+                            },
+                            "O": {
+                                "type": "text"
+                            },
+                            "OU": {
+                                "type": "text"
+                            },
+                            "ST": {
+                                "type": "text"
+                            },
+                            "aggregated": {
+                                "type": "text"
+                            },
+                            "email_address": {
+                                "type": "text"
+                            }
+                        }
+                    },
+                    "subject": {
+                        "properties": {
+                            "C": {
+                                "type": "text"
+                            },
+                            "CN": {
+                                "type": "text"
+                            },
+                            "L": {
+                                "type": "text"
+                            },
+                            "O": {
+                                "type": "text"
+                            },
+                            "OU": {
+                                "type": "text"
+                            },
+                            "ST": {
+                                "type": "text"
+                            },
+                            "aggregated": {
+                                "type": "text"
+                            },
+                            "email_address": {
+                                "type": "text"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
